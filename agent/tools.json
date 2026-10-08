@@ -1,0 +1,46 @@
+[
+  {
+    "name": "check_availability",
+    "description": "Devuelve los huecos libres de un día para uno o varios servicios. Llamar SIEMPRE antes de ofrecer una hora.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "description": "Día en hora de Madrid, formato YYYY-MM-DD." },
+        "services": { "type": "array", "items": { "type": "string" }, "description": "Ids de servicio de Datos del negocio, p. ej. [\"limpieza\"]." },
+        "professional": { "type": "string", "description": "Nombre exacto del profesional, o \"cualquiera\"." }
+      },
+      "required": ["date", "services"]
+    }
+  },
+  {
+    "name": "book_appointment",
+    "description": "Reserva la cita en la agenda y avisa al negocio. Solo tras releer los datos y que el cliente confirme.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "start": { "type": "string", "description": "Campo start exacto de un hueco devuelto por check_availability (ISO 8601 con zona)." },
+        "services": { "type": "array", "items": { "type": "string" } },
+        "professional": { "type": "string", "description": "El profesional del hueco elegido, o \"cualquiera\"." },
+        "name": { "type": "string" },
+        "phone": { "type": "string", "description": "Teléfono confirmado en voz alta con el cliente." },
+        "new_client": { "type": "boolean" },
+        "notes": { "type": "string", "description": "Nada de datos de salud." }
+      },
+      "required": ["start", "services", "name", "phone"]
+    }
+  },
+  {
+    "name": "take_message",
+    "description": "Deja un recado al negocio: escalados, cambios, anulaciones, lista de espera, todo lo que no resuelves tú.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "reason": { "type": "string", "description": "Motivo en una línea. Nada de datos de salud." },
+        "urgency": { "type": "string", "enum": ["normal", "alta"] }
+      },
+      "required": ["name", "phone", "reason"]
+    }
+  }
+]

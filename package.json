@@ -1,0 +1,15 @@
+{
+  "name": "voice-receptionist-demo",
+  "version": "1.0.0",
+  "description": "Spanish AI voice receptionist: answers calls on Vapi or Retell, books into Google Calendar, notifies the owner. Showcase repo.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "simulate": "node scripts/simulate-call.mjs",
+    "build:prompt": "node scripts/build-prompt.mjs --platform vapi && node scripts/build-prompt.mjs --platform retell",
+    "test": "node --test"
+  }
+}
