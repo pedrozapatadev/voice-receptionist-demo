@@ -61,7 +61,7 @@ Cliente nuevo
 ← {
   "ok": true,
   "booked": true,
-  "id": "mock-cc741a48",
+  "id": "mock-db6c807a",
   "spoken": "viernes 9 de octubre, 10:15",
   "professional": "Dra. Ruiz",
   "duration_min": 45,
@@ -69,6 +69,7 @@ Cliente nuevo
 }
 
 🤖 Agente   Listo, Marta: limpieza el viernes 9 de octubre, 10:15 con Dra. Ruiz. ¡Hasta entonces!
+
 
 --- y si otro cliente intenta el mismo hueco ---
 
@@ -78,6 +79,7 @@ Cliente nuevo
   "error": "SLOT_TAKEN",
   "message": "Ese hueco ya no está libre. Vuelve a consultar disponibilidad."
 }
+
 
 --- endodoncia con el Dr. Martín (no la hace) ---
 

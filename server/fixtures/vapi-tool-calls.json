@@ -1,0 +1,40 @@
+{
+  "_source": "Shape copied from the tool-calls example at docs.vapi.ai/tools/custom-tools, with our tool's name and arguments. __DATE__ is replaced at test time.",
+  "message": {
+    "timestamp": 1678901234567,
+    "type": "tool-calls",
+    "toolCallList": [
+      {
+        "id": "toolu_01DTPAzUm5Gk3zxrpJ969oMF",
+        "type": "function",
+        "function": {
+          "name": "check_availability",
+          "arguments": { "date": "__DATE__", "services": ["limpieza"], "professional": "cualquiera" }
+        }
+      }
+    ],
+    "toolWithToolCallList": [
+      {
+        "type": "function",
+        "function": {
+          "name": "check_availability",
+          "parameters": { "type": "object", "properties": { "date": { "type": "string" } } },
+          "description": "Devuelve los huecos libres de un día."
+        },
+        "server": { "url": "https://example.com/vapi" },
+        "messages": [],
+        "toolCall": {
+          "id": "toolu_01DTPAzUm5Gk3zxrpJ969oMF",
+          "type": "function",
+          "function": {
+            "name": "check_availability",
+            "arguments": { "date": "__DATE__", "services": ["limpieza"], "professional": "cualquiera" }
+          }
+        }
+      }
+    ],
+    "artifact": { "messages": [] },
+    "assistant": { "name": "Recepcionista demo", "model": {}, "voice": {} },
+    "call": { "id": "call-uuid", "orgId": "org-uuid", "type": "webCall", "assistant": {} }
+  }
+}

@@ -1,3 +1,5 @@
+![Voice Receptionist: an AI phone agent in Spanish that books into Google Calendar and messages the owner](docs/media/social-preview.png)
+
 # Voice Receptionist (ES) — AI phone agent that books appointments
 
 [![Project Status: Unsupported – archived demo](https://www.repostatus.org/badges/latest/unsupported.svg)](https://www.repostatus.org/#unsupported)
@@ -17,6 +19,13 @@ Calendar, and messages the owner. It runs on **Vapi** or **Retell**.
 > production, and the clinic in the examples is fictional. The repo is unmaintained, and
 > the Vapi and Retell APIs may have changed since.
 
+![A simulated booking call: the agent checks availability, books a slot, the owner is notified, and a double booking is refused](docs/media/simulate.gif)
+
+<sub>`npm run simulate -- --compact`, recorded with [vhs](https://github.com/charmbracelet/vhs)
+from [`scripts/media/simulate.tape`](scripts/media/simulate.tape). The dialogue is scripted;
+the tool calls are real HTTP requests to the webhook server, backed by the mock calendar.
+This is not a phone call.</sub>
+
 ## What's in here, honestly
 
 | Part | Origin | How it's verified |
@@ -24,7 +33,7 @@ Calendar, and messages the owner. It runs on **Vapi** or **Retell**.
 | Prompt design: core rules + appointments vertical ([`agent/`](agent/)) | From the company's work. Cleaned, with a fictional business | Manual test calls at the time, using the [QA plan](docs/qa-plan.md) |
 | Config-driven prompt builder ([`scripts/build-prompt.mjs`](scripts/build-prompt.mjs)) | From the company's work. Adapted for two platforms | `npm test` |
 | QA plan ([`docs/qa-plan.md`](docs/qa-plan.md)) | From the company's work. Translated | It is the manual test |
-| Webhook server: availability, booking, Google Calendar, notifications ([`server/`](server/)) | **Written for this public repo.** At the company, booking ran through Retell's built-in calendar integration. This version re-implements that flow in the open so it can be read, tested and run without an account | 26 automated tests + [offline simulator](docs/sample-run.md). **Not yet tested on a live call** |
+| Webhook server: availability, booking, Google Calendar, notifications ([`server/`](server/)) | **Written for this public repo.** At the company, booking ran through Retell's built-in calendar integration. This version re-implements that flow in the open so it can be read, tested and run without an account | 30 automated tests, including [end-to-end tests](server/e2e.test.mjs) that boot the real server and send it payloads shaped like the Vapi and Retell docs examples, plus the [offline simulator](docs/sample-run.md). **Not yet tested on a live call** |
 
 | Real | Mocked / placeholder |
 |---|---|
@@ -68,7 +77,7 @@ Three tools, defined once in [`agent/tools.json`](agent/tools.json):
 ```bash
 git clone https://github.com/pedrozapatadev/voice-receptionist-demo
 cd voice-receptionist-demo
-npm test            # 26 tests, zero dependencies to install
+npm test            # 30 tests, zero dependencies to install
 npm run simulate    # a scripted booking call through the real webhook handler
 ```
 
@@ -165,6 +174,17 @@ existing number and forwards calls to the agent.
 - **Zero runtime dependencies.** Node 22 built-ins only: `fetch`, `crypto`, `node:test`.
   Nothing to audit, nothing to go stale.
 
+## Read more
+
+- [**Prompt design**](docs/prompt-design.md): every rule in the Spanish prompts, explained in
+  English, with the failure each one prevents.
+- **Decision records:**
+  [0001 voice platform](docs/decisions/0001-voice-platform.md) ·
+  [0002 calendar + notify before integrations](docs/decisions/0002-calendar-and-notify-first.md) ·
+  [0003 rules in the server, not the prompt](docs/decisions/0003-rules-in-server-not-prompt.md)
+- [**QA plan**](docs/qa-plan.md): the 22 live-call checks, each marked as enforced by the
+  server or by the prompt.
+
 ## Known limitations
 
 - No cancel or reschedule tool. Those requests become a message for the team (by design in
@@ -187,6 +207,7 @@ agent/
 scripts/
   build-prompt.mjs         core + vertical + config → dist/prompt.<platform>.md
   simulate-call.mjs        offline booking call through the webhook handler
+  media/                   vhs tape for the GIF, HTML source of the social card
 server/
   availability.mjs         slot rules (pure)
   tools.mjs                check_availability · book_appointment · take_message
@@ -194,9 +215,14 @@ server/
   calendar/mock.mjs        in-memory calendar (+ JSON mirror)
   calendar/google.mjs      Google Calendar over REST with a service account
   notify.mjs               console · webhook · Twilio WhatsApp
+  e2e.test.mjs             boots index.mjs, replays docs-shaped Vapi/Retell payloads
+  fixtures/                those payloads
 docs/
+  prompt-design.md         the prompt rules, explained in English
+  decisions/               architecture decision records
   qa-plan.md               the 22-check live-call test plan
   sample-run.md            real simulator output
+  media/                   README GIF and social preview image
 ```
 
 ## License

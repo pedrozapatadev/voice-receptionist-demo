@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;box-sizing:border-box}
+body{width:1280px;height:640px;background:#f3eee4;color:#1d1a16;overflow:hidden;position:relative;font-family:-apple-system,"Helvetica Neue",sans-serif}
+.wrap{position:absolute;inset:0;padding:64px 80px;display:grid;grid-template-columns:1fr 340px;column-gap:56px}
+.kicker{font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:#8a5a2b;font-weight:600}
+.q{font-family:"New York","Iowan Old Style",Georgia,serif;font-size:104px;line-height:.98;letter-spacing:-.03em;margin-top:34px;font-weight:500}
+.q em{font-style:italic;color:#b5482a}
+.sub{margin-top:34px;font-size:25px;line-height:1.4;color:#4a4339;max-width:720px}
+.rule{position:absolute;left:80px;right:80px;bottom:92px;border-top:1px solid #cdbfa8}
+.foot{position:absolute;left:80px;right:80px;bottom:44px;display:flex;justify-content:space-between;font-size:17px;color:#6f6556;letter-spacing:.02em}
+.wave{display:flex;align-items:center;gap:7px;height:120px;margin-top:20px}
+.wave i{display:block;width:9px;border-radius:5px;background:#1d1a16}
+.cal{margin-top:34px;border:1.5px solid #1d1a16;border-radius:10px;overflow:hidden;font-size:15px}
+.cal div{display:flex;justify-content:space-between;padding:11px 16px;border-top:1px solid #cdbfa8}
+.cal div:first-child{border-top:0;background:#1d1a16;color:#f3eee4;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:13px}
+.cal .hit{background:#b5482a;color:#fff;font-weight:600}
+.side{padding-top:6px}
+</style></head><body><div class="wrap">
+<div><div class="kicker">AI voice receptionist · open-source demo</div>
+<div class="q">«¿En qué puedo<br><em>ayudarle?</em>»</div>
+<div class="sub">Answers the phone in Castilian Spanish, books a real free slot into Google Calendar, and messages the owner.</div></div>
+<div class="side"><div class="wave" id="w"></div>
+<div class="cal"><div><span>Viernes</span><span>Dra. Ruiz</span></div><div><span>09:00</span><span>ocupado</span></div><div class="hit"><span>10:15</span><span>Limpieza — Marta</span></div><div><span>11:15</span><span>libre</span></div></div></div>
+</div><div class="rule"></div>
+<div class="foot"><span>Vapi · Retell · Google Calendar · WhatsApp</span><span>github.com/pedrozapatadev/voice-receptionist-demo</span></div>
+<script>const h=[18,34,58,90,64,40,76,110,82,52,30,62,96,70,44,24,50,80,56,28,14,36];document.getElementById('w').innerHTML=h.map(x=>`<i style="height:${x}px"></i>`).join('')</script>
+</body></html>

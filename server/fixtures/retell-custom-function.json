@@ -1,0 +1,29 @@
+{
+  "_source": "Shape copied from the custom-function request example at docs.retellai.com (build/single-multi-prompt/custom-function), with our tool's name and arguments. __START__ is replaced at test time.",
+  "name": "book_appointment",
+  "args": {
+    "start": "__START__",
+    "services": ["limpieza"],
+    "professional": "cualquiera",
+    "name": "Marta (fixture)",
+    "phone": "+34 000 000 000",
+    "new_client": true
+  },
+  "call": {
+    "call_type": "web_call",
+    "call_id": "Jabr9TXYYJHfvl6Syypi88rdAHYHmcq6",
+    "agent_id": "oBeDLoLOeuAbiuaMFXRtDOLriTJ5tSxD",
+    "agent_version": 1,
+    "agent_name": "Recepcionista demo",
+    "call_status": "ongoing",
+    "metadata": {},
+    "retell_llm_dynamic_variables": {},
+    "data_storage_setting": "everything",
+    "start_timestamp": 1703302407333,
+    "transcript": "Agent: Clínica Dental Ejemplo, le atiende un asistente virtual. ¿En qué puedo ayudarle?\nUser: Quería una limpieza.\n",
+    "transcript_object": [
+      { "role": "agent", "content": "Clínica Dental Ejemplo, le atiende un asistente virtual. ¿En qué puedo ayudarle?", "words": [] },
+      { "role": "user", "content": "Quería una limpieza.", "words": [] }
+    ]
+  }
+}

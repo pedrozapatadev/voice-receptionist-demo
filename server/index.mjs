@@ -16,13 +16,13 @@ const env = process.env;
 const cfg = loadConfig(env.BUSINESS_CONFIG ?? join(ROOT, 'agent/config.example.yaml'));
 const calendar = env.CALENDAR_BACKEND === 'google'
   ? createGoogleCalendar({ calendarId: env.GOOGLE_CALENDAR_ID, keyFile: env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE })
-  : createMockCalendar({ file: join(ROOT, 'data/mock-calendar.json') });
+  : createMockCalendar({ file: env.MOCK_CALENDAR_FILE ?? join(ROOT, 'data/mock-calendar.json') });
 const notifier = createNotifier({ env });
 const tools = createTools({ cfg, calendar, notifier });
 
 const port = Number(env.PORT ?? 3000);
-createApp({ tools, env }).listen(port, () => {
-  console.log(`voice-receptionist · ${cfg.negocio.nombre} · http://localhost:${port}`);
+const server = createApp({ tools, env }).listen(port, () => {
+  console.log(`voice-receptionist · ${cfg.negocio.nombre} · http://localhost:${server.address().port}`);
   console.log(`  calendar: ${calendar.kind} · notify: ${notifier.channels.join(', ')}`);
   if (!env.VAPI_SECRET) console.warn('  ⚠️  VAPI_SECRET not set — /vapi accepts unauthenticated requests');
   if (!env.RETELL_API_KEY) console.warn('  ⚠️  RETELL_API_KEY not set — /retell skips signature verification');
