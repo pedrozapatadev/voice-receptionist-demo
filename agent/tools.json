@@ -5,11 +5,30 @@
     "parameters": {
       "type": "object",
       "properties": {
-        "date": { "type": "string", "description": "Día en hora de Madrid, formato YYYY-MM-DD." },
-        "services": { "type": "array", "items": { "type": "string" }, "description": "Ids de servicio de Datos del negocio, p. ej. [\"limpieza\"]." },
-        "professional": { "type": "string", "description": "Nombre exacto del profesional, o \"cualquiera\"." }
+        "date": {
+          "type": "string",
+          "description": "Día en hora de Madrid, formato YYYY-MM-DD."
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ids de servicio de Datos del negocio, p. ej. [\"limpieza\"]."
+        },
+        "professional": {
+          "type": "string",
+          "description": "Nombre exacto del profesional, o \"cualquiera\"."
+        },
+        "after": {
+          "type": "string",
+          "description": "Opcional. Solo huecos a partir de esta hora (HH:MM, Madrid). «Por la tarde» → \"16:00\"; «después de las cinco» → \"17:00\"."
+        }
       },
-      "required": ["date", "services"]
+      "required": [
+        "date",
+        "services"
+      ]
     }
   },
   {
@@ -18,15 +37,41 @@
     "parameters": {
       "type": "object",
       "properties": {
-        "start": { "type": "string", "description": "Campo start exacto de un hueco devuelto por check_availability (ISO 8601 con zona)." },
-        "services": { "type": "array", "items": { "type": "string" } },
-        "professional": { "type": "string", "description": "El profesional del hueco elegido, o \"cualquiera\"." },
-        "name": { "type": "string" },
-        "phone": { "type": "string", "description": "Teléfono confirmado en voz alta con el cliente." },
-        "new_client": { "type": "boolean" },
-        "notes": { "type": "string", "description": "Nada de datos de salud." }
+        "start": {
+          "type": "string",
+          "description": "Campo start exacto de un hueco devuelto por check_availability (ISO 8601 con zona)."
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "professional": {
+          "type": "string",
+          "description": "El profesional del hueco elegido, o \"cualquiera\"."
+        },
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Teléfono confirmado en voz alta con el cliente."
+        },
+        "new_client": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Nada de datos de salud."
+        }
       },
-      "required": ["start", "services", "name", "phone"]
+      "required": [
+        "start",
+        "services",
+        "name",
+        "phone"
+      ]
     }
   },
   {
@@ -35,12 +80,29 @@
     "parameters": {
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
-        "phone": { "type": "string" },
-        "reason": { "type": "string", "description": "Motivo en una línea. Nada de datos de salud." },
-        "urgency": { "type": "string", "enum": ["normal", "alta"] }
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Motivo en una línea. Nada de datos de salud."
+        },
+        "urgency": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "alta"
+          ]
+        }
       },
-      "required": ["name", "phone", "reason"]
+      "required": [
+        "name",
+        "phone",
+        "reason"
+      ]
     }
   }
 ]

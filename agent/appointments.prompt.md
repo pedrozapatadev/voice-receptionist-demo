@@ -24,7 +24,7 @@ suena peor que no decirla. Va literal en el campo de primer mensaje de la plataf
 
 | Herramienta | Cuándo |
 |---|---|
-| `check_availability` | Antes de ofrecer CUALQUIER hueco. Le pasas fecha, servicios y profesional (o `cualquiera`) |
+| `check_availability` | Antes de ofrecer CUALQUIER hueco. Le pasas fecha, servicios, profesional (o `cualquiera`) y, si el cliente da una franja («por la tarde», «después de las cinco»), la hora desde la que buscar en `after` |
 | `book_appointment` | Solo después de releer los datos y que el cliente diga que sí |
 | `take_message` | Recados, escalados fuera de horario, y todo lo que no resuelves tú |
 

@@ -9,14 +9,15 @@
  *
  * Auth: Vapi via a shared secret sent as `Authorization: Bearer …` (current
  * credential style) or the legacy X-Vapi-Secret header; Retell via the
- * X-Retell-Signature HMAC over the raw body. Unauthenticated mode is allowed
- * only when the secret isn't configured, and logged loudly at startup.
+ * X-Retell-Signature HMAC over the raw body. A route whose secret isn't set is
+ * open only on a loopback bind (local dev); with `requireAuth` it is switched off.
  */
 
 import { createServer } from 'node:http';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const MAX_BODY = 1_000_000;
+const MAX_TOOL_CALLS = 10;   // one turn never needs more; caps fan-out to the calendar API
 const RETELL_MAX_SKEW_MS = 5 * 60 * 1000;
 
 const safeEqual = (a, b) => {
@@ -70,32 +71,42 @@ const vapiAuthorized = (req, secret) => {
   return safeEqual(bearer ?? req.headers['x-vapi-secret'] ?? '', secret);
 };
 
-async function handleVapi({ tools, env, req, raw }) {
+async function handleVapi({ tools, env, req, raw, requireAuth }) {
+  if (!env.VAPI_SECRET && requireAuth) return [503, { error: 'VAPI_SECRET not configured' }];
   if (env.VAPI_SECRET && !vapiAuthorized(req, env.VAPI_SECRET)) return [401, { error: 'unauthorized' }];
   const msg = JSON.parse(raw).message ?? {};
   if (msg.type !== 'tool-calls') return [200, {}];   // status updates, transcripts… acknowledged, ignored
-  const results = await Promise.all((msg.toolCallList ?? []).map(async (tc) => {
-    const { id, name, args } = vapiCall(tc);
+  const calls = msg.toolCallList ?? [];
+  if (calls.length > MAX_TOOL_CALLS) return [400, { error: 'too many tool calls' }];
+  const results = await Promise.all(calls.map(async (tc) => {
+    const name = tc.function?.name ?? tc.name;
     try {
+      const { id, args } = vapiCall(tc);   // inside the try: bad arguments fail this call, not the batch
       return { name, toolCallId: id, result: JSON.stringify(await runTool(tools, name, args)) };
     } catch (e) {
-      console.error(`tool ${name} crashed:`, e);
-      return { name, toolCallId: id, error: 'Error interno. Toma recado y que el equipo llame.' };
+      console.error(`tool ${name} failed:`, e.message);
+      return { name, toolCallId: tc.id, error: 'Error interno. Toma recado y que el equipo llame.' };
     }
   }));
   return [200, { results }];
 }
 
-async function handleRetell({ tools, env, req, raw }) {
+async function handleRetell({ tools, env, req, raw, requireAuth }) {
+  if (!env.RETELL_API_KEY && requireAuth) return [503, { error: 'RETELL_API_KEY not configured' }];
   if (env.RETELL_API_KEY && !verifyRetellSignature({ rawBody: raw, header: req.headers['x-retell-signature'], apiKey: env.RETELL_API_KEY }))
     return [401, { error: 'unauthorized' }];
   const { name, args } = JSON.parse(raw);
-  return [200, await runTool(tools, name, args)];
+  try {
+    return [200, await runTool(tools, name, args)];
+  } catch (e) {
+    console.error(`tool ${name} failed:`, e.message);
+    return [200, { ok: false, error: 'INTERNAL', message: 'Error interno. Toma recado y que el equipo llame.' }];
+  }
 }
 
 const ROUTES = { '/vapi': handleVapi, '/retell': handleRetell };
 
-export function createApp({ tools, env = process.env }) {
+export function createApp({ tools, env = process.env, requireAuth = false }) {
   return createServer(async (req, res) => {
     const path = new URL(req.url, 'http://x').pathname;
     if (req.method === 'GET' && path === '/health') return send(res, 200, { ok: true });
@@ -103,7 +114,7 @@ export function createApp({ tools, env = process.env }) {
     if (!route) return send(res, 404, { error: 'not found' });
     try {
       const raw = await readBody(req);
-      const [status, body] = await route({ tools, env, req, raw });
+      const [status, body] = await route({ tools, env, req, raw, requireAuth });
       return send(res, status, body);
     } catch (e) {
       if (e instanceof SyntaxError) return send(res, 400, { error: 'invalid json' });

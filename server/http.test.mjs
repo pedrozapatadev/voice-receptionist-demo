@@ -73,3 +73,37 @@ test('bad json → 400, unknown route → 404, health → 200', async () => {
   assert.equal((await post('/nope', {})).status, 404);
   assert.equal((await fetch(`${base}/health`)).status, 200);
 });
+
+test('regression: one malformed tool call fails alone, not the whole batch', async () => {
+  const res = await post('/vapi', vapiBody([
+    { id: 'bad', type: 'function', function: { name: 'check_availability', arguments: '{not json' } },
+    { id: 'good', name: 'check_availability', parameters: { date: '2026-10-13' } },
+  ]), { 'x-vapi-secret': ENV.VAPI_SECRET });
+  assert.equal(res.status, 200);
+  const { results } = await res.json();
+  assert.ok(results.find(r => r.toolCallId === 'bad').error);
+  assert.equal(JSON.parse(results.find(r => r.toolCallId === 'good').result).echo.date, '2026-10-13');
+});
+
+test('regression: more than 10 tool calls in one message → 400', async () => {
+  const calls = Array.from({ length: 11 }, (_, i) => ({ id: `c${i}`, name: 'check_availability', parameters: {} }));
+  assert.equal((await post('/vapi', vapiBody(calls), { 'x-vapi-secret': ENV.VAPI_SECRET })).status, 400);
+});
+
+test('regression: retell tool crash → 200 with an error the agent can read', async () => {
+  const raw = JSON.stringify({ name: 'take_message', args: {} });
+  const ts = Date.now();
+  const sig = `v=${ts},d=${createHmac('sha256', ENV.RETELL_API_KEY).update(raw + ts).digest('hex')}`;
+  const res = await post('/retell', raw, { 'x-retell-signature': sig });
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).error, 'INTERNAL');
+});
+
+test('requireAuth: a route with no secret is switched off on a non-loopback bind', async () => {
+  const open = createApp({ tools, env: {}, requireAuth: true }).listen(0);
+  await new Promise((r) => open.once('listening', r));
+  const url = `http://localhost:${open.address().port}`;
+  const res = await fetch(`${url}/vapi`, { method: 'POST', body: JSON.stringify(vapiBody([])) });
+  open.close();
+  assert.equal(res.status, 503);
+});

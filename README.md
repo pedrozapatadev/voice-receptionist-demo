@@ -33,7 +33,7 @@ This is not a phone call.</sub>
 | Prompt design: core rules + appointments vertical ([`agent/`](agent/)) | From the company's work. Cleaned, with a fictional business | Manual test calls at the time, using the [QA plan](docs/qa-plan.md) |
 | Config-driven prompt builder ([`scripts/build-prompt.mjs`](scripts/build-prompt.mjs)) | From the company's work. Adapted for two platforms | `npm test` |
 | QA plan ([`docs/qa-plan.md`](docs/qa-plan.md)) | From the company's work. Translated | It is the manual test |
-| Webhook server: availability, booking, Google Calendar, notifications ([`server/`](server/)) | **Written for this public repo.** At the company, booking ran through Retell's built-in calendar integration. This version re-implements that flow in the open so it can be read, tested and run without an account | 30 automated tests, including [end-to-end tests](server/e2e.test.mjs) that boot the real server and send it payloads shaped like the Vapi and Retell docs examples, plus the [offline simulator](docs/sample-run.md). **Not yet tested on a live call** |
+| Webhook server: availability, booking, Google Calendar, notifications ([`server/`](server/)) | **Written for this public repo.** At the company, booking ran through Retell's built-in calendar integration. This version re-implements that flow in the open so it can be read, tested and run without an account | 42 automated tests, including [end-to-end tests](server/e2e.test.mjs) that boot the real server and send it payloads shaped like the Vapi and Retell docs examples, plus the [offline simulator](docs/sample-run.md). **Not yet tested on a live call** |
 
 | Real | Mocked / placeholder |
 |---|---|
@@ -77,7 +77,7 @@ Three tools, defined once in [`agent/tools.json`](agent/tools.json):
 ```bash
 git clone https://github.com/pedrozapatadev/voice-receptionist-demo
 cd voice-receptionist-demo
-npm test            # 30 tests, zero dependencies to install
+npm test            # 42 tests, zero dependencies to install
 npm run simulate    # a scripted booking call through the real webhook handler
 ```
 
@@ -92,7 +92,7 @@ dashboard, so you don't need a phone number.
 
 ```bash
 cp .env.example .env          # set VAPI_SECRET and/or RETELL_API_KEY
-npm start                     # http://localhost:3000, mock calendar
+npm start                     # http://127.0.0.1:3000, mock calendar
 cloudflared tunnel --url http://localhost:3000    # or: ngrok http 3000
 ```
 
@@ -134,10 +134,12 @@ GOOGLE_SERVICE_ACCOUNT_KEY_FILE=/path/outside/repo/key.json
 ```
 
 Events record the professional in a private extended property. Events with no
-professional (a training day, say) block everyone.
+professional block everyone, and all-day events (a holiday, a training day) block the
+whole day even though Google creates them as "free" by default.
 
 **5. Owner notifications (optional).** Notifications always go to the console. Set
-`NOTIFY_WEBHOOK_URL` to send them to Slack, Discord, Make or n8n, or set the `TWILIO_*`
+`NOTIFY_WEBHOOK_URL` to send them to a Slack incoming webhook, Make, n8n, or Discord
+(through its Slack-compatible `…/slack` URL), or set the `TWILIO_*`
 variables to send WhatsApp (the Twilio sandbox works for testing). A failed notification
 never undoes a booking, and the agent is told the owner wasn't notified.
 
@@ -160,13 +162,18 @@ existing number and forwards calls to the agent.
   means filling in a config, not prompt-engineering.
 - **"Never invent" is the top rule.** The agent may only state what's in the config or
   what a tool returned. Health, allergies, insurance, complaints and prices not in the
-  config always go to a human. Health data (GDPR Art. 9) is never written into notes.
+  config always go to a human. The prompt forbids writing health data (GDPR Art. 9) into
+  notes. The server can't detect it, but it caps and sanitises every caller-supplied field
+  before it reaches the calendar or the owner.
 - **AI disclosure in the first sentence.** EU AI Act Art. 50 requires people to be told
   they're talking to an AI system. It's in the first message and enforced by a test.
 - **Phone register, not chat register.** One or two short sentences per turn, no lists, no
   corporate filler, times said the way people say them, and tú/usted fixed per business.
-- **Vapi always gets HTTP 200.** Vapi ignores non-2xx bodies, so a failing tool returns
-  200 with an `error` string the agent can read out, never a 500 that turns into silence.
+- **A failing tool still gets HTTP 200.** Vapi ignores non-2xx bodies, so a crashed or
+  malformed tool call returns 200 with an `error` string the agent can read out, never a
+  500 that turns into silence. One bad call in a batch doesn't take down the others.
+- **No double bookings, even in the same instant.** The re-check and the calendar write
+  run under a lock. Two identical bookings fired in parallel produce exactly one event.
 - **Calendar + notification first, booking-system integrations later.** Many Spanish
   businesses use booking systems with no open API. Writing to Google Calendar and
   messaging the owner works on day one and doesn't break when a vendor changes its
@@ -191,7 +198,13 @@ existing number and forwards calls to the agent.
   v1, but a real deployment would want them).
 - Call transfer is left to the platform's built-in transfer feature and isn't implemented
   here.
-- The mock calendar is single-process. There's no rate limiting and no persistence layer.
+- The mock calendar and the booking lock are single-process. Run one instance. There's no
+  rate limiting and no persistence layer.
+- **Security defaults:** the server binds to `127.0.0.1` (a tunnel still reaches it). A
+  route whose secret isn't set is open on localhost for development and **switched off**
+  if you bind wider (`HOST=0.0.0.0`). Use long random secrets. A signed Retell request
+  replayed within its 5-minute window is accepted again: harmless for bookings, which
+  dedupe on the slot, but it can repeat a `take_message` notification.
 - No recording or consent flow. If you turn recording on, the greeting must say so (the
   config supports `aviso_grabacion`). Check current AEPD guidance. Nothing here is
   legal advice.

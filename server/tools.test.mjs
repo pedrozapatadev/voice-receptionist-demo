@@ -72,3 +72,44 @@ test('offered slots are spread out, not 15 minutes apart', () => {
   const picked = spreadSlots(s, 3, 60);
   assert.deepEqual(picked.map(x => x.start.getUTCHours() * 60 + x.start.getUTCMinutes()), [420, 480, 570]);
 });
+
+test('regression: two identical bookings in one batch → exactly one wins', async () => {
+  const { tools, calendar } = setup();
+  const { slots: [slot] } = await tools.check_availability({ date: '2026-10-13', services: ['revision'] });
+  const args = { start: slot.start, services: ['revision'], professional: slot.professional, name: 'A', phone: '1' };
+  const results = await Promise.all([tools.book_appointment(args), tools.book_appointment({ ...args, name: 'B' })]);
+  assert.deepEqual(results.map(r => r.booked === true).sort(), [false, true]);
+  assert.equal(calendar.all().length, 1);
+});
+
+test('regression: a start with no UTC offset is refused, not read in the server timezone', async () => {
+  const { tools } = setup();
+  const r = await tools.book_appointment({ start: '2026-10-13T10:00:00', services: ['revision'], name: 'A', phone: '1' });
+  assert.equal(r.error, 'INVALID_START');
+});
+
+test('regression: "after" reaches afternoon slots; nothing left → NONE_AFTER', async () => {
+  const { tools } = setup();
+  const pm = await tools.check_availability({ date: '2026-10-13', services: ['revision'], after: '16:00' });
+  assert.ok(pm.slots.every(s => s.start >= '2026-10-13T16:00'));
+  assert.equal(pm.slots[0].start, '2026-10-13T16:00:00+02:00');
+  const late = await tools.check_availability({ date: '2026-10-13', services: ['revision'], after: '19:45' });
+  assert.equal(late.reason, 'NONE_AFTER');
+  assert.equal((await tools.check_availability({ date: '2026-10-13', services: ['revision'], after: '4pm' })).error, 'INVALID_AFTER');
+});
+
+test('regression: services as a bare string, "Cualquiera" in any case, helpful unknown-pro message', async () => {
+  const { tools } = setup();
+  assert.equal((await tools.check_availability({ date: '2026-10-13', services: 'limpieza' })).available, true);
+  assert.equal((await tools.check_availability({ date: '2026-10-13', services: ['revision'], professional: 'Cualquiera' })).available, true);
+  const unknown = await tools.check_availability({ date: '2026-10-13', services: ['revision'], professional: 'Dr. House' });
+  assert.equal(unknown.error, 'UNKNOWN_PRO');
+  assert.match(unknown.message, /Dra\. Ruiz, Dr\. Martín/);
+});
+
+test('regression: caller text is bounded and stripped of markup before it reaches the owner', async () => {
+  const { tools, sent } = setup();
+  await tools.take_message({ name: 'Eve <!channel>', phone: '1', reason: `línea 1\nlínea 2 ${'x'.repeat(1000)}` });
+  assert.ok(!sent[0].text.includes('<!channel>'));
+  assert.ok(sent[0].event.reason.length <= 300 && !sent[0].event.reason.includes('\n'));
+});

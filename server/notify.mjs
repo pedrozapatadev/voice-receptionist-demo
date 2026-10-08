@@ -4,13 +4,16 @@
  *
  * Channels (all optional, any combination):
  *   console           always on — the demo default
- *   webhook           NOTIFY_WEBHOOK_URL — POSTs {text, event}; Slack/Discord/Make/n8n compatible
+ *   webhook           NOTIFY_WEBHOOK_URL — POSTs {text, event}: Slack incoming webhooks, Make, n8n,
+ *                     or Discord via its Slack-compatible URL (…/slack)
  *   twilio-whatsapp   TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_WHATSAPP_FROM + OWNER_WHATSAPP_TO
  */
 
+const TIMEOUT_MS = 5000;   // a hung channel must not stall the booking response
+
 const sendWebhook = (url, fetchImpl) => async (text, event) => {
   const res = await fetchImpl(url, {
-    method: 'POST', headers: { 'content-type': 'application/json' },
+    method: 'POST', headers: { 'content-type': 'application/json' }, signal: AbortSignal.timeout(TIMEOUT_MS),
     body: JSON.stringify({ text, event }),
   });
   if (!res.ok) throw new Error(`webhook ${res.status}`);
@@ -20,7 +23,7 @@ const sendTwilioWhatsApp = (env, fetchImpl) => async (text) => {
   const sid = env.TWILIO_ACCOUNT_SID;
   const auth = Buffer.from(`${sid}:${env.TWILIO_AUTH_TOKEN}`).toString('base64');
   const res = await fetchImpl(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: 'POST',
+    method: 'POST', signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: { authorization: `Basic ${auth}`, 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       From: `whatsapp:${env.TWILIO_WHATSAPP_FROM}`, To: `whatsapp:${env.OWNER_WHATSAPP_TO}`, Body: text,

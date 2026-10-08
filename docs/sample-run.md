@@ -61,7 +61,7 @@ Cliente nuevo
 ← {
   "ok": true,
   "booked": true,
-  "id": "mock-db6c807a",
+  "id": "mock-7478cffa",
   "spoken": "viernes 9 de octubre, 10:15",
   "professional": "Dra. Ruiz",
   "duration_min": 45,

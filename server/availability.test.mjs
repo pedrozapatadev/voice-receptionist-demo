@@ -68,3 +68,9 @@ test('DST: the October clock change is handled in Madrid time', () => {
   const { slots: s } = slots({ ymd: '2026-10-26', serviceIds: ['revision'] });
   assert.equal(toZonedIso(s[0].start, TZ), '2026-10-26T09:00:00+01:00');
 });
+
+test('regression: a "00:00" close means midnight tonight, keeping the 23:30 slot', () => {
+  const late = { ...cfg, horarios: { ...cfg.horarios, martes: ['20:00-00:00'] } };
+  const { slots: s } = findSlots({ cfg: late, events: [], now: NOW, ymd: '2026-10-13', serviceIds: ['revision'] });
+  assert.equal(toZonedIso(s.at(-1).start, TZ), '2026-10-13T23:30:00+02:00');
+});

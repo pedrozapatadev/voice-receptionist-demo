@@ -27,7 +27,7 @@ are covered by `npm test` and can't be talked around by the LLM. Rows marked
 | 6 | "Quería pedir cita" | Asks service, day, name — no interrogation | prompt |
 | 7 | "Para mañana por la tarde" | Resolves *mañana* in Madrid time | platform time variable + prompt |
 | 8 | "El domingo" (closed) | Says it's closed, offers **two** concrete alternatives | **server** (`CLOSED_DAY`) + prompt |
-| 9 | Ask for a taken slot | Offers the nearest, not a long list | **server** (spread slots) |
+| 9 | Ask for a taken slot | Offers the nearest, not a long list | **server** (`after` window + spread slots) + prompt |
 | 10 | Cleaning + whitening together | Books 105 min, not 45 | **server** (summed duration) |
 | 11 | "Con la Dra. Ruiz" | Honoured even if it's later | **server** |
 | 12 | "Con el Dr. Martín, una endodoncia" | **Refuses**: he doesn't do it | **server** (`PRO_CANNOT_DO_SERVICE`) |

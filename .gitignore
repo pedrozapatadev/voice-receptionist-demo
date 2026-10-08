@@ -6,4 +6,7 @@ dist/
 data/
 *.key.json
 service-account*.json
+*credentials*.json
+*.pem
+keys/
 .DS_Store

@@ -29,15 +29,17 @@ export function resolveServices(cfg, ids) {
 
 /** Professionals able to do every requested service; honours an explicit request. */
 export function eligibleProfessionals(cfg, serviceIds, requested = ANY) {
-  const pros = (cfg.citas?.profesionales ?? []).filter(p => serviceIds.every(id => p.hace.includes(id)));
-  if (!requested || requested === ANY) return pros;
-  const wanted = pros.filter(p => p.nombre.toLowerCase() === requested.toLowerCase());
-  if (wanted.length === 0) {
-    const exists = (cfg.citas?.profesionales ?? []).some(p => p.nombre.toLowerCase() === requested.toLowerCase());
-    throw new BookingError(exists ? 'PRO_CANNOT_DO_SERVICE' : 'UNKNOWN_PRO',
-      exists ? `${requested} no hace ese servicio.` : `No hay ningún profesional llamado ${requested}.`);
-  }
-  return wanted;
+  const ids = [].concat(serviceIds);
+  const all = cfg.citas?.profesionales ?? [];
+  const pros = all.filter(p => ids.every(id => p.hace.includes(id)));
+  const wantedName = String(requested ?? ANY).trim().toLowerCase();
+  if (!wantedName || wantedName === ANY) return pros;
+  const wanted = pros.filter(p => p.nombre.toLowerCase() === wantedName);
+  if (wanted.length) return wanted;
+  if (all.some(p => p.nombre.toLowerCase() === wantedName))
+    throw new BookingError('PRO_CANNOT_DO_SERVICE', `${requested} no hace ese servicio.`);
+  throw new BookingError('UNKNOWN_PRO',
+    `No hay ningún profesional llamado ${requested}. Válidos: ${all.map(p => p.nombre).join(', ')} o ${ANY}.`);
 }
 
 /** Why a date can't be booked at all, or null if it's open. */
@@ -69,8 +71,9 @@ export function findSlots({ cfg, events, ymd, serviceIds, professional = ANY, no
   if (reason) return { slots: [], reason };
 
   const tz = tzOf(cfg);
-  const { durationMin } = resolveServices(cfg, serviceIds);
-  const pros = eligibleProfessionals(cfg, serviceIds, professional);
+  const ids = [].concat(serviceIds);
+  const { durationMin } = resolveServices(cfg, ids);
+  const pros = eligibleProfessionals(cfg, ids, professional);
   if (pros.length === 0) return { slots: [], reason: 'NO_PRO_FOR_COMBINATION' };
 
   const step = cfg.citas?.paso_min ?? 15;
@@ -78,7 +81,9 @@ export function findSlots({ cfg, events, ymd, serviceIds, professional = ANY, no
   const slots = [];
   for (const range of cfg.horarios[weekdayKey(ymd, tz)]) {
     const [open, close] = range.split('-');
-    const closeAt = zonedToDate(ymd, close === '00:00' ? '23:59' : close, tz);
+    // "00:00" / "24:00" as a closing time means end of day, not this morning.
+    const closeAt = close === '00:00' || close === '24:00'
+      ? addMinutes(zonedToDate(ymd, '23:59', tz), 1) : zonedToDate(ymd, close, tz);
     for (let start = zonedToDate(ymd, open, tz); addMinutes(start, durationMin) <= closeAt; start = addMinutes(start, step)) {
       if (start <= now) continue;
       const end = addMinutes(start, durationMin);
